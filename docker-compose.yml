@@ -1,0 +1,28 @@
+services:
+  db:
+    image: postgres:16
+    container_name: bitemporal-db
+    environment:
+      POSTGRES_USER: memory
+      POSTGRES_PASSWORD: memory
+      POSTGRES_DB: memory
+    ports:
+      - "5433:5432"          # 5433 on your machine, so it won't clash with a local Postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro   # *.sql here run once, in name order, on first start
+      - ./tests:/tests:ro
+  app:
+    build: .
+    container_name: bitemporal-app
+    environment:
+      DATABASE_URL: host=db port=5432 dbname=memory user=memory password=memory
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+volumes:
+  pgdata:
